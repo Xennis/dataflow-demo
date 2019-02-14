@@ -1,5 +1,7 @@
 # dataflow-demo
 
+[![Build Status](https://travis-ci.org/Xennis/dataflow-demo.svg?branch=master)](https://travis-ci.org/Xennis/dataflow-demo)
+
 ## Setup
 
 ### Local setup
