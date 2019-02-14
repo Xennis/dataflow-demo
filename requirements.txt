@@ -1,0 +1,4 @@
+apache-beam[gcp]==2.9.0
+# Development dependencies
+pycodestyle==2.4.0
+pylint==1.9.4
