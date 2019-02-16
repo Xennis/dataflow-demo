@@ -33,6 +33,7 @@ gcloud auth application-default login
 ```sh
 cd customer
 python customer.py \
+    --setup_file ./setup.py \
     --runner DataflowRunner \
     --project ${GCP_PROJECT} \
     --region ${GCP_REGION} \

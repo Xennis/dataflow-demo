@@ -2,13 +2,16 @@ from __future__ import absolute_import
 
 import argparse
 import json
-import logging
+
+from past.builtins import unicode
 
 import apache_beam as beam
 from apache_beam import pvalue
 from apache_beam.io import ReadFromText
 from apache_beam.metrics import Metrics
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
+
+from pipeline.common import common
 
 
 # pylint: disable=too-few-public-methods
@@ -71,14 +74,21 @@ def run(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         u'--input',
-        dest=u'input',
+        type=str,
         help=u'Input directory to process.',
         required=True)
     parser.add_argument(
-        u'--broken-table',
-        dest=u'broken_table',
-        default=u'customer.broken'
+        u'--broken_dataset',
+        type=str,
+        default=u'customer',
+        help=u'BigQuery dataset to write tables to. Must already exist.'
     )
+    parser.add_argument(
+        u'--broken_table_name',
+        default=u'broken',
+        help=u'BigQuery table name.'
+    )
+
     known_args, pipeline_args = parser.parse_known_args(argv)
 
     pipeline_options = PipelineOptions(pipeline_args)
@@ -91,18 +101,21 @@ def run(argv=None):
             | u'parse' >> beam.ParDo(ParseRecord()).with_outputs(ParseRecord.TAG_BROKEN_DATA, main=u'customers')
         )
 
-        _customers, _ = parse_result
+        customers, _ = parse_result
         broken_customers = parse_result[ParseRecord.TAG_BROKEN_DATA]
 
-        _ = (
+        # pylint: disable=expression-not-assigned
+        (
             broken_customers
-            | u'convert' >> beam.ParDo(ConvertToRow())
-            | u'save' >> beam.io.WriteToBigQuery(
-                table=known_args.broken_table,
+            | u'broken/convert' >> beam.ParDo(ConvertToRow())
+            | u'broken/save' >> beam.io.WriteToBigQuery(
+                dataset=known_args.broken_dataset,
+                table=known_args.broken_table_name,
                 schema=u'{element}:STRING,{error}:STRING'.format(element=Field.Element, error=Field.Error))
         )
 
-
-if __name__ == u'__main__':
-    logging.getLogger().setLevel(logging.INFO)
-    run()
+        # pylint: disable=expression-not-assigned
+        (
+            customers
+            | u'debug' >> beam.ParDo(common.Debug())
+        )
